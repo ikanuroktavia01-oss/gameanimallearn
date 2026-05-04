@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Animal Learn</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700;800&display=swap');
+
+        :root {
+            --bg-color: #E0F7FA;
+            --primary: #FF4081;
+            --secondary: #00BCD4;
+            --success: #4CAF50;
+            --danger: #F44336;
+            --accent: #FFC107;
+            --text-dark: #333;
+            --font-main: 'Fredoka One', cursive;
+            --font-sub: 'Nunito', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: linear-gradient(135deg, #00BCD4 0%, #FF9800 100%);
+            font-family: var(--font-sub);
+            overflow: hidden;
+            touch-action: manipulation;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* --- Header & Controls --- */
+        #header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            z-index: 20;
+        }
+
+        .score-board {
+            font-family: var(--font-main);
+            font-size: 1.5rem;
+            color: white;
+            background: rgba(255, 64, 129, 0.8);
+            padding: 5px 20px;
+            border-radius: 25px;
+            border: 3px solid white;
+        }
+
+        .controls button {
+            background: white;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 50%;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-left: 10px;
+            transition: all 0.2s;
+        }
+
+        /* --- Screens --- */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .hidden { opacity: 0; pointer-events: none; z-index: -1; }
+        .active { opacity: 1; z-index: 5; }
+
+        /* --- Main Menu Split Layout --- */
+        #menu-screen {
+            flex-direction: row;
+        }
+
+        #menu-left {
+            flex: 0.8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .bg-deco {
+            position: absolute;
+            font-size: 2.2rem;
+            opacity: 0.7;
+            animation: float 5s infinite ease-in-out;
+            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.1));
+            z-index: 1;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+            50% { transform: translateY(-15px) rotate(10deg) scale(1.1); }
+        }
+
+        #menu-right {
+            flex: 1.2;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(5px);
+            box-shadow: -15px 0 35px rgba(0,0,0,0.1);
+            z-index: 2;
+        }
+
+        #menu-right h1 {
+            font-family: var(--font-main);
+            font-size: 3.8rem;
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            line-height: 1.1;
+            text-shadow: 3px 3px 0px var(--primary), 6px 6px 15px rgba(0,0,0,0.2);
+        }
+
+        .level-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+            max-width: 300px; /* Ukuran kotak level sedang */
+        }
+
+        .level-btn {
+            position: relative;
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--text-dark);
+            font-family: var(--font-sub);
+            font-weight: 800;
+            border: none;
+            border-radius: 18px;
+            padding: 15px 20px;
+            cursor: pointer;
+            box-shadow: 0 6px 0 rgba(0,0,0,0.1), 0 8px 15px rgba(0,0,0,0.1);
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            overflow: hidden;
+        }
+
+        .level-btn .level-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1rem;
+        }
+
+        .level-btn .level-marker {
+            color: var(--primary);
+            font-family: var(--font-main);
+        }
+
+        .level-btn:hover {
+            transform: translateY(-3px);
+            background: white;
+        }
+
+        .level-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 rgba(0,0,0,0.1);
+        }
+
+        /* --- Game Screen --- */
+        #game-screen {
+            flex-direction: column;
+            justify-content: flex-start;
+            padding-top: 70px;
+            background: var(--bg-color);
+        }
+
+        #game-area {
+            flex: 1;
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #animal-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+            gap: 15px;
+            padding: 20px;
+            justify-items: center;
+            align-content: flex-start;
+            height: 60%;
+            overflow-y: auto;
+        }
+
+        .animal-bubble {
+            width: 90px;
+            height: 90px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #cbd5e1, inset 0 -4px 8px rgba(0,0,0,0.05);
+            border: 3px solid #f1f5f9;
+            transition: transform 0.2s;
+        }
+
+        .animal-emoji { font-size: 2.8rem; line-height: 1; }
+        .animal-name { font-size: 0.8rem; font-weight: bold; color: var(--text-dark); margin-top: 4px; }
+
+        #basket { position: absolute; top: 15%; right: 30px; font-size: 5rem; z-index: 1; opacity: 0.9; }
+
+        #shooter-area {
+            height: 40%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-bottom: 40px;
+        }
+
+        #target-letter-display {
+            font-family: var(--font-main);
+            font-size: 4.5rem;
+            color: var(--primary);
+            background: white;
+            width: 110px;
+            height: 110px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            border: 8px solid var(--primary);
+            box-shadow: 0 10px 0 #c2185b, 0 15px 30px rgba(0,0,0,0.1);
+            z-index: 5;
+        }
+
+        #shooter-base { width: 150px; height: 45px; background: var(--secondary); border-radius: 40px 40px 0 0; margin-top: -25px; z-index: 1; }
+
+        .projectile { position: absolute; width: 25px; height: 25px; background: var(--primary); border-radius: 50%; z-index: 100; pointer-events: none; }
+        .basketball { position: absolute; font-size: 3rem; z-index: 101; pointer-events: none; }
+
+        #message-overlay {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: var(--font-main);
+            font-size: 4rem;
+            color: var(--success);
+            text-shadow: 3px 3px 0 white;
+            pointer-events: none;
+            z-index: 200;
+            opacity: 0;
+        }
+
+        @media (max-width: 900px) {
+            #menu-screen { flex-direction: column; }
+            #menu-left { flex: 0.3; min-height: 20vh; }
+            #menu-right { flex: 1.7; padding: 20px; }
+            #menu-right h1 { font-size: 2.8rem; margin-bottom: 20px; }
+            .level-container { max-width: 260px; }
+            #target-letter-display { width: 85px; height: 85px; font-size: 3rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="header">
+        <div class="score-board">Skor: <span id="score">0</span></div>
+        <div class="controls">
+            <button id="btn-sound" title="Suara" onclick="toggleSound()">🔊</button>
+            <button id="btn-home" title="Beranda" onclick="showMenu()" class="hidden">🏠</button>
+        </div>
+    </div>
+
+    <!-- Main Menu Layout -->
+    <div id="menu-screen" class="screen active">
+        <div class="bg-deco" style="top: 15%; left: 10%; animation-delay: 0s;">🐻</div>
+        <div class="bg-deco" style="top: 45%; left: 25%; animation-delay: 1s; font-size: 3.5rem;">🐘</div>
+        <div class="bg-deco" style="top: 75%; left: 15%; animation-delay: 2s;">🐦</div>
+        <div class="bg-deco" style="top: 20%; left: 60%; animation-delay: 1.5s;">🐦</div> 
+        <div class="bg-deco" style="top: 60%; left: 75%; animation-delay: 0.5s;">🐻</div>
+
+        <div id="menu-left">
+            <div style="font-size: 8rem; z-index: 2; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.2));">🐾</div>
+        </div>
+        <div id="menu-right">
+            <h1>Animal<br>Learn</h1>
+            <div class="level-container">
+                <!-- Teks level (Pemula, dll) dihilangkan sesuai permintaan -->
+                <button class="level-btn" onclick="startGame('A-J')">
+                    <div class="level-content">
+                        <span class="level-marker">1.</span> Huruf A - J
+                    </div>
+                </button>
+                <button class="level-btn" onclick="startGame('K-T')">
+                    <div class="level-content">
+                        <span class="level-marker">2.</span> Huruf K - T
+                    </div>
+                </button>
+                <button class="level-btn" onclick="startGame('U-Z')">
+                    <div class="level-content">
+                        <span class="level-marker">3.</span> Huruf U - Z
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-screen" class="screen hidden">
+        <div id="game-area">
+            <div id="basket">🏀</div>
+            <div id="animal-grid"></div>
+            <div id="shooter-area">
+                <div id="target-letter-display">A</div>
+                <div id="shooter-base"></div>
+            </div>
+            <div id="message-overlay">HEBAT!</div>
+        </div>
+    </div>
+
+    <script>
+        const animalData = [
+            { letter: 'A', name: 'Ant', indName: 'Semut', emoji: '🐜' },
+            { letter: 'B', name: 'Bear', indName: 'Beruang', emoji: '🐻' },
+            { letter: 'C', name: 'Cat', indName: 'Kucing', emoji: '🐱' },
+            { letter: 'D', name: 'Dog', indName: 'Anjing', emoji: '🐶' },
+            { letter: 'E', name: 'Elephant', indName: 'Gajah', emoji: '🐘' },
+            { letter: 'F', name: 'Frog', indName: 'Katak', emoji: '🐸' },
+            { letter: 'G', name: 'Giraffe', indName: 'Jerapah', emoji: '🦒' },
+            { letter: 'H', name: 'Horse', indName: 'Kuda', emoji: '🐴' },
+            { letter: 'I', name: 'Iguana', indName: 'Iguana', emoji: '🦎' },
+            { letter: 'J', name: 'Jellyfish', indName: 'Ubur-ubur', emoji: '🪼' },
+            { letter: 'K', name: 'Kangaroo', indName: 'Kanguru', emoji: '🦘' },
+            { letter: 'L', name: 'Lion', indName: 'Singa', emoji: '🦁' },
+            { letter: 'M', name: 'Monkey', indName: 'Monyet', emoji: '🐵' },
+            { letter: 'N', name: 'Newt', indName: 'Kadal Air', emoji: '🦎' },
+            { letter: 'O', name: 'Owl', indName: 'Burung Hantu', emoji: '🦉' },
+            { letter: 'P', name: 'Penguin', indName: 'Penguin', emoji: '🐧' },
+            { letter: 'Q', name: 'Quail', indName: 'Puyuh', emoji: '🐦' },
+            { letter: 'R', name: 'Rabbit', indName: 'Kelinci', emoji: '🐰' },
+            { letter: 'S', name: 'Snake', indName: 'Ular', emoji: '🐍' },
+            { letter: 'T', name: 'Tiger', indName: 'Harimau', emoji: '🐯' },
+            { letter: 'U', name: 'Unicorn', indName: 'Kuda Tanduk', emoji: '🦄' },
+            { letter: 'V', name: 'Vulture', indName: 'Hering', emoji: '🦅' },
+            { letter: 'W', name: 'Whale', indName: 'Paus', emoji: '🐳' },
+            { letter: 'X', name: 'X-ray Fish', indName: 'Ikan X-Ray', emoji: '🐠' },
+            { letter: 'Y', name: 'Yak', indName: 'Sapi Liar', emoji: '🐂' },
+            { letter: 'Z', name: 'Zebra', indName: 'Zebra', emoji: '🦓' }
+        ];
+
+        let currentLevelAnimals = [];
+        let activeAnimals = [];
+        let currentTargetLetter = '';
+        let score = 0;
+        let isShooting = false;
+        let audioCtx;
+        let soundEnabled = true;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playTone(freq, type, duration, vol = 0.1) {
+            if (!soundEnabled || !audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function playSound(type) {
+            initAudio();
+            if(type === 'shoot') playTone(300, 'sine', 0.2);
+            else if (type === 'correct') {
+                playTone(523.25, 'triangle', 0.15);
+                setTimeout(() => playTone(659.25, 'triangle', 0.15), 150);
+                setTimeout(() => playTone(783.99, 'triangle', 0.3), 300);
+            } else if (type === 'wrong') playTone(150, 'sawtooth', 0.3);
+            else if (type === 'win') {
+                playTone(440, 'square', 0.2);
+                setTimeout(() => playTone(554, 'square', 0.2), 200);
+                setTimeout(() => playTone(659, 'square', 0.4), 400);
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('btn-sound').innerText = soundEnabled ? '🔊' : '🔇';
+            if(!soundEnabled && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+        }
+
+        function speakTranslation(engName, indName) {
+            if (!soundEnabled || !('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            const utterEng = new SpeechSynthesisUtterance(engName);
+            utterEng.lang = 'en-US'; utterEng.rate = 0.85; utterEng.pitch = 1.2;
+            const utterInd = new SpeechSynthesisUtterance(indName);
+            utterInd.lang = 'id-ID'; utterInd.rate = 0.85; utterInd.pitch = 1.2;
+            window.speechSynthesis.speak(utterEng);
+            window.speechSynthesis.speak(utterInd);
+        }
+
+        function showMenu() {
+            document.getElementById('game-screen').className = 'screen hidden';
+            document.getElementById('menu-screen').className = 'screen active';
+            document.getElementById('btn-home').classList.add('hidden');
+            score = 0;
+            document.getElementById('score').innerText = score;
+        }
+
+        function startGame(levelStr) {
+            initAudio();
+            let start, end;
+            if(levelStr === 'A-J') { start = 0; end = 9; }
+            else if(levelStr === 'K-T') { start = 10; end = 19; }
+            else { start = 20; end = 25; }
+
+            currentLevelAnimals = animalData.slice(start, end + 1);
+            activeAnimals = [...currentLevelAnimals].sort(() => Math.random() - 0.5);
+
+            document.getElementById('menu-screen').className = 'screen hidden';
+            document.getElementById('game-screen').className = 'screen active';
+            document.getElementById('btn-home').classList.remove('hidden');
+
+            renderAnimals();
+            pickNextLetter();
+        }
+
+        function renderAnimals() {
+            const grid = document.getElementById('animal-grid');
+            grid.innerHTML = '';
+            activeAnimals.forEach(animal => {
+                const el = document.createElement('div');
+                el.className = 'animal-bubble';
+                el.id = `animal-${animal.letter}`;
+                el.innerHTML = `<div class="animal-emoji" id="emoji-${animal.letter}">${animal.emoji}</div><div class="animal-name">${animal.name}</div>`;
+                el.onclick = () => handleShoot(animal.letter, el);
+                grid.appendChild(el);
+            });
+        }
+
+        function pickNextLetter() {
+            if (activeAnimals.length === 0) {
+                playSound('win');
+                setTimeout(() => { alert('Hore! Level Selesai! 🎉 Skor: ' + score); showMenu(); }, 800);
+                return;
+            }
+            currentTargetLetter = activeAnimals[Math.floor(Math.random() * activeAnimals.length)].letter;
+            const display = document.getElementById('target-letter-display');
+            display.innerText = currentTargetLetter;
+            display.animate([{ transform: 'scale(0.5)' }, { transform: 'scale(1)' }], { duration: 300 });
+        }
+
+        function handleShoot(targetLetter, targetElement) {
+            if (isShooting) return;
+            isShooting = true;
+            playSound('shoot');
+
+            const shooter = document.getElementById('target-letter-display');
+            const sRect = shooter.getBoundingClientRect();
+            const tRect = targetElement.getBoundingClientRect();
+
+            const p = document.createElement('div');
+            p.className = 'projectile';
+            document.body.appendChild(p);
+
+            const startX = sRect.left + sRect.width/2 - 12;
+            const startY = sRect.top + sRect.height/2 - 12;
+            const endX = tRect.left + tRect.width/2 - 12;
+            const endY = tRect.top + tRect.height/2 - 12;
+
+            const anim = p.animate([
+                { transform: `translate(${startX}px, ${startY}px)` },
+                { transform: `translate(${endX}px, ${endY}px) scale(0.5)` }
+            ], { duration: 400 });
+
+            anim.onfinish = () => { p.remove(); checkHit(targetLetter, targetElement); };
+        }
+
+        function checkHit(hitLetter, targetElement) {
+            if (hitLetter === currentTargetLetter) {
+                score += 10;
+                document.getElementById('score').innerText = score;
+                playSound('correct');
+                const animal = animalData.find(a => a.letter === hitLetter);
+                if (animal) speakTranslation(animal.name, animal.indName);
+                showMessage("BENAR!", "var(--success)");
+
+                animateBasketThrow(targetElement, () => {
+                    targetElement.classList.add('pop-out');
+                    setTimeout(() => {
+                        activeAnimals = activeAnimals.filter(a => a.letter !== hitLetter);
+                        targetElement.remove();
+                        isShooting = false;
+                        pickNextLetter();
+                    }, 500);
+                });
+            } else {
+                playSound('wrong');
+                score = Math.max(0, score - 2);
+                document.getElementById('score').innerText = score;
+                showMessage("COBA LAGI", "var(--danger)");
+                const emojiDiv = document.getElementById(`emoji-${hitLetter}`);
+                const old = emojiDiv.innerText;
+                emojiDiv.innerText = '🤕';
+                targetElement.classList.add('shake');
+                setTimeout(() => {
+                    targetElement.classList.remove('shake');
+                    emojiDiv.innerText = old;
+                    isShooting = false;
+                }, 800);
+            }
+        }
+
+        function animateBasketThrow(el, cb) {
+            const basket = document.getElementById('basket');
+            const eR = el.getBoundingClientRect();
+            const bR = basket.getBoundingClientRect();
+            const ball = document.createElement('div');
+            ball.className = 'basketball'; ball.innerText = '🏀';
+            document.body.appendChild(ball);
+
+            const sX = eR.left + eR.width/2 - 20;
+            const sY = eR.top;
+            const eX = bR.left + 25;
+            const eY = bR.top + 25;
+
+            const anim = ball.animate([
+                { transform: `translate(${sX}px, ${sY}px)` },
+                { transform: `translate(${(sX+eX)/2}px, ${Math.min(sY,eY)-120}px)` },
+                { transform: `translate(${eX}px, ${eY}px)` }
+            ], { duration: 600 });
+
+            anim.onfinish = () => { ball.remove(); if(cb) cb(); };
+        }
+
+        function showMessage(txt, col) {
+            const m = document.getElementById('message-overlay');
+            m.innerText = txt; m.style.color = col;
+            m.animate([{ opacity: 0, transform: 'translate(-50%, 0%)' }, { opacity: 1, transform: 'translate(-50%, -50%)' }, { opacity: 0, transform: 'translate(-50%, -100%)' }], { duration: 1200 });
+        }
+    </script>
+</body>
+</html>
